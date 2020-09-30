@@ -31,6 +31,7 @@ class _PageDemoState extends State<PageDemo> {
 
   AssetPathEntity picPath;
   List<AssetEntity> picList = [];
+  List<AssetEntity> headPicList;
 
   var page = 0;
 
@@ -41,8 +42,17 @@ class _PageDemoState extends State<PageDemo> {
       return path.assetCount;
     }
   }
-
+Future getHeadPic()async{
+headPicList.clear();
+     for(index = 0;index<list.length;index++){
+       await path.refreshPathProperties();
+       final list = await path.getAssetListPaged(0, 1);
+       headPicList.addAll(list);
+    }
+     print("==>>headpiclsit$headPicList");
+}
   Future onRefresh() async {
+
     await path.refreshPathProperties();
 
     final list = await path.getAssetListPaged(0, loadCount);
@@ -58,7 +68,9 @@ class _PageDemoState extends State<PageDemo> {
   @override
   void initState() {
     list = [];
+    headPicList = [];
     getData();
+
     super.initState();
   }
 
@@ -135,33 +147,60 @@ class _PageDemoState extends State<PageDemo> {
 
   void showPicDialog() {
     final format = ThumbFormat.jpeg;
+
     showDialog(
         context: context,
         builder: (context) => AlertDialog(
-                content: Column(
-                  mainAxisSize: MainAxisSize.min,
-              children: List.generate(
-                  list.length,
-                  (item) => GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            Navigator.pop(context);
-                            index = item;
-                          });
-                        },
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceAround,
-                          children: <Widget>[
-                            buildContent(format, index),
-                            Text("${list[item].name}"),
-                            Text("${list[item].assetCount}")
-                          ],
-                        ),
-                      )),
-            )));
+                content:FutureBuilder(
+                  future: getHeadPic(),
+                  builder: (c,s){
+                    switch (s.connectionState) {
+                      case ConnectionState.none:
+                        print('还没有开始网络请求');
+                        return Text('还没有开始网络请求');
+
+                      case ConnectionState.active:
+                        print('active');
+                        return Text('ConnectionState.active');
+                      case ConnectionState.waiting:
+                        print('waiting');
+                        return Center(
+                          child: CircularProgressIndicator(),
+                        );
+                      case ConnectionState.done:
+                        print('done');
+                        if (s.hasError) return Text('Error: ${s.error}');
+                         return  Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: List.generate(
+                              list.length,
+                                  (item) => GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    Navigator.pop(context);
+                                    index = item;
+                                  });
+                                },
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                  children: <Widget>[
+                                    buildContent(format, item),
+                                    Text("${list[item].name}"),
+                                    Text("${list[item].assetCount}")
+                                  ],
+                                ),
+                              )),
+                        );
+
+                      default:
+                        return null;
+                    }
+
+                  },
+                )));
   }
   Widget buildContent(ThumbFormat format,index) {
-    final AssetEntity entity = picList[index];
+    final AssetEntity entity = headPicList[index];
     if (entity.type == AssetType.audio) {
       return Center(
         child: Icon(
@@ -248,7 +287,10 @@ class _PageDemoState extends State<PageDemo> {
           ),
         ),
         actions: <Widget>[
-          IconButton(icon: Icon(Icons.send), onPressed: () => showPicDialog())
+          IconButton(icon: Icon(Icons.send), onPressed: (){
+
+            showPicDialog();
+          })
         ],
         backgroundColor: Colors.black,
       ),
