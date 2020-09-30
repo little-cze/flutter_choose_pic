@@ -145,26 +145,29 @@ class _PageDemoState extends State<PageDemo> {
     print("listlist==>>${list.length}");
     return headPicList.isEmpty
         ? Container()
-        : ListView(
-            children: List.generate(
-                headPicList.length,
-                (item) => GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          Navigator.pop(context);
-                          index = item;
-                        });
-                      },
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: <Widget>[
-                          buildContent(format, item),
-                          Text("${list.isNotEmpty ? list[item].name : "name"}"),
-                          Text(
-                              "${list.isNotEmpty ? list[item].assetCount : ""}")
-                        ],
-                      ),
-                    )),
+        : SingleChildScrollView(
+            child: Column(
+              children: List.generate(
+                  headPicList.length,
+                  (item) => GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            Navigator.pop(context);
+                            index = item;
+                          });
+                        },
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: <Widget>[
+                            buildContent(format, item),
+                            Text(
+                                "${list.isNotEmpty ? list[item].name : "name"}"),
+                            Text(
+                                "${list.isNotEmpty ? list[item].assetCount : ""}")
+                          ],
+                        ),
+                      )),
+            ),
           );
   }
 
