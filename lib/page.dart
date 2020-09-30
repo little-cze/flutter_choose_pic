@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/cupertino.dart';
@@ -5,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:photo_manager/photo_manager.dart';
 import 'core/lru_map.dart';
 import 'image_item_widget.dart';
-import 'pic_page.dart';
 
 class PageDemo extends StatefulWidget {
   @override
@@ -26,7 +26,7 @@ class _PageDemoState extends State<PageDemo> {
   AssetPathEntity get path => list[index];
 
   List<AssetEntity> checked = [];
-  int loadCount = 50;
+  int loadCount = 30;
   bool isInit = false;
 
   AssetPathEntity picPath;
@@ -42,26 +42,25 @@ class _PageDemoState extends State<PageDemo> {
       return path.assetCount;
     }
   }
-Future getHeadPic()async{
-headPicList.clear();
-     for(index = 0;index<list.length;index++){
-       await path.refreshPathProperties();
-       final list = await path.getAssetListPaged(0, 1);
-       headPicList.addAll(list);
-    }
-     print("==>>headpiclsit$headPicList");
-}
-  Future onRefresh() async {
 
+  Future getHeadPic() async {
+    headPicList.clear();
+    for (index = 0; index < list.length; index++) {
+      await path.refreshPathProperties();
+      final list = await path.getAssetListPaged(0, 1);
+      headPicList.addAll(list);
+    }
+    print("==>>headpiclsit$headPicList");
+  }
+
+  Future onRefresh() async {
     await path.refreshPathProperties();
 
     final list = await path.getAssetListPaged(0, loadCount);
-    print("list=>>$list");
     picList.clear();
     picList.addAll(list);
     isInit = true;
     print("刷新成功====》》》》$picList");
-//    printListLength("onRefresh");
     return;
   }
 
@@ -96,6 +95,21 @@ headPicList.clear();
     this.list.addAll(galleryList);
     setState(() {});
     print(list);
+  }
+
+  Future<void> getMoreData() async {
+    if(!mounted){
+      return;
+    }
+    if (showItemCount > path.assetCount) {
+      print("already max");
+      return Text("a");
+    }
+    final list = await path.getAssetListPaged(++page, loadCount);
+    print("加载更多的数组：$list");
+    picList.addAll(list);
+    print(picList);
+    print("loading more");
   }
 
   FilterOptionGroup makeOption() {
@@ -147,34 +161,33 @@ headPicList.clear();
 
   void showPicDialog() {
     final format = ThumbFormat.jpeg;
-
     showDialog(
         context: context,
         builder: (context) => AlertDialog(
-                content:FutureBuilder(
-                  future: getHeadPic(),
-                  builder: (c,s){
-                    switch (s.connectionState) {
-                      case ConnectionState.none:
-                        print('还没有开始网络请求');
-                        return Text('还没有开始网络请求');
+                content: FutureBuilder(
+              future: getHeadPic(),
+              builder: (c, s) {
+                switch (s.connectionState) {
+                  case ConnectionState.none:
+                    print('还没有开始网络请求');
+                    return Text('还没有开始网络请求');
 
-                      case ConnectionState.active:
-                        print('active');
-                        return Text('ConnectionState.active');
-                      case ConnectionState.waiting:
-                        print('waiting');
-                        return Center(
-                          child: CircularProgressIndicator(),
-                        );
-                      case ConnectionState.done:
-                        print('done');
-                        if (s.hasError) return Text('Error: ${s.error}');
-                         return  Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: List.generate(
-                              list.length,
-                                  (item) => GestureDetector(
+                  case ConnectionState.active:
+                    print('active');
+                    return Text('ConnectionState.active');
+                  case ConnectionState.waiting:
+                    print('waiting');
+                    return Center(
+                      child: CircularProgressIndicator(),
+                    );
+                  case ConnectionState.done:
+                    print('done');
+                    if (s.hasError) return Text('Error: ${s.error}');
+                    return Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: List.generate(
+                          list.length,
+                          (item) => GestureDetector(
                                 onTap: () {
                                   setState(() {
                                     Navigator.pop(context);
@@ -182,7 +195,8 @@ headPicList.clear();
                                   });
                                 },
                                 child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceAround,
                                   children: <Widget>[
                                     buildContent(format, item),
                                     Text("${list[item].name}"),
@@ -190,16 +204,16 @@ headPicList.clear();
                                   ],
                                 ),
                               )),
-                        );
+                    );
 
-                      default:
-                        return null;
-                    }
-
-                  },
-                )));
+                  default:
+                    return null;
+                }
+              },
+            )));
   }
-  Widget buildContent(ThumbFormat format,index) {
+
+  Widget buildContent(ThumbFormat format, index) {
     final AssetEntity entity = headPicList[index];
     if (entity.type == AssetType.audio) {
       return Center(
@@ -242,6 +256,7 @@ headPicList.clear();
 
     return image;
   }
+
   Widget _buildImageWidget(AssetEntity entity, Uint8List uint8list, num size) {
     return Image.memory(
       uint8list,
@@ -250,8 +265,30 @@ headPicList.clear();
       fit: BoxFit.cover,
     );
   }
+Widget loadWidget()=> Center(
+  child: SizedBox.fromSize(
+    size: Size.square(30),
+    child: (Platform.isIOS || Platform.isMacOS)
+        ? CupertinoActivityIndicator()
+        : CircularProgressIndicator(),
+  ),
+);
   Widget _buildItem(context, index) {
+    final listCount = picList;
+    if (listCount.length == index+1) {
+      print("加载更多");
+      getMoreData();
+      setState(() {
+////todo 加载更多
+      });
+      return Text("加载中");
+    }
+    if (index > listCount.length) {
+      return Container();
+    }
+
     final entity = picList[index];
+
 
     return Stack(
       children: [
@@ -276,55 +313,59 @@ headPicList.clear();
     );
   }
 
+  Widget picWidget() {
+
+   return RefreshIndicator(
+      onRefresh: onRefresh,
+      child: GridView.builder(
+
+        itemBuilder: _buildItem,
+        itemCount: picList.length,
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 4,
+        ),
+      ),
+    );
+  }
+
+  futureBuild() => (BuildContext context, AsyncSnapshot snapshot) {
+        switch (snapshot.connectionState) {
+          case ConnectionState.none:
+            return Text('还没有开始网络请求');
+          case ConnectionState.active:
+            return Text('ConnectionState.active');
+          case ConnectionState.waiting:
+            return Center(
+              child: CircularProgressIndicator(),
+            );
+          case ConnectionState.done:
+            if (snapshot.hasError) return Text('Error: ${snapshot.error}');
+            return picWidget();
+          default:
+            return null;
+        }
+      };
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          "${list.isEmpty?"pic":list[index].name}",
+          "${list.isEmpty ? "pic" : list[index].name}",
           style: TextStyle(
             color: Colors.white,
           ),
         ),
         actions: <Widget>[
-          IconButton(icon: Icon(Icons.send), onPressed: (){
-
-            showPicDialog();
-          })
+          IconButton(
+              icon: Icon(Icons.send),
+              onPressed: () {
+                showPicDialog();
+              })
         ],
         backgroundColor: Colors.black,
       ),
-      body: FutureBuilder(
-        future: onRefresh(),
-        builder: (BuildContext context, AsyncSnapshot snapshot) {
-          switch (snapshot.connectionState) {
-            case ConnectionState.none:
-              print('还没有开始网络请求');
-              return Text('还没有开始网络请求');
-
-            case ConnectionState.active:
-              print('active');
-              return Text('ConnectionState.active');
-            case ConnectionState.waiting:
-              print('waiting');
-              return Center(
-                child: CircularProgressIndicator(),
-              );
-            case ConnectionState.done:
-              print('done');
-              if (snapshot.hasError) return Text('Error: ${snapshot.error}');
-              return GridView.builder(
-                itemBuilder: _buildItem,
-                itemCount: path.assetCount,
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 4,
-                ),
-              );
-            default:
-              return null;
-          }
-        },
-      ),
+      body: FutureBuilder(future: onRefresh(), builder: futureBuild()),
     );
   }
 }

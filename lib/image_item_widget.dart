@@ -42,7 +42,6 @@ class _ImageItemWidgetState extends State<ImageItemWidget> {
     Widget image;
 
     if (u8List != null) {
-      print("nullllll");
       return _buildImageWidget(item, u8List, size);
     } else {
       image = FutureBuilder<Uint8List>(

@@ -14,6 +14,7 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp(
       home: Scaffold(
           appBar: AppBar(
+            backgroundColor: Colors.black,
             title: Text("Image Choose"),
           ),
           body: MyHome()),

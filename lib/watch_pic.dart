@@ -8,6 +8,7 @@ class ImageDetail extends StatefulWidget {
   final Uint8List bytes;
 
   const ImageDetail({Key key, this.bytes}) : super(key: key);
+
   @override
   _ImageDetailState createState() => _ImageDetailState();
 }
@@ -17,10 +18,16 @@ class _ImageDetailState extends State<ImageDetail> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-title: Text("Image Detail"),
+        title: Text("Image Detail"),
         backgroundColor: Colors.black,
         actions: <Widget>[
-          Icon(Icons.check_circle,color: Colors.green,)
+          Padding(
+            padding: EdgeInsets.only(right: 16),
+            child: Icon(
+              Icons.check_circle,
+              color: Colors.green,
+            ),
+          )
         ],
       ),
       body: PhotoView(
