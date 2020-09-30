@@ -9,10 +9,10 @@ import 'watch_pic.dart';
 
 class ImageItemWidget extends StatefulWidget {
   final AssetEntity entity;
-
+final size;
   const ImageItemWidget({
     Key key,
-    this.entity,
+    this.entity, this.size = 100,
   }) : super(key: key);
 
   @override
@@ -23,20 +23,12 @@ class _ImageItemWidgetState extends State<ImageItemWidget> {
   @override
   Widget build(BuildContext context) {
     final format = ThumbFormat.jpeg;
-    return buildContent(format);
+    return buildContent(format,widget.size);
   }
 
-  Widget buildContent(ThumbFormat format) {
-    if (widget.entity.type == AssetType.audio) {
-      return Center(
-        child: Icon(
-          Icons.audiotrack,
-          size: 30,
-        ),
-      );
-    }
+  Widget buildContent(ThumbFormat format,size) {
     final item = widget.entity;
-    final size = 130;
+
     final u8List = ImageLruCache.getData(item, size, format);
 
     Widget image;
@@ -44,6 +36,7 @@ class _ImageItemWidgetState extends State<ImageItemWidget> {
     if (u8List != null) {
       return _buildImageWidget(item, u8List, size);
     } else {
+
       image = FutureBuilder<Uint8List>(
         future: item.thumbDataWithSize(size, size),
         builder: (context, snapshot) {
@@ -71,17 +64,28 @@ class _ImageItemWidgetState extends State<ImageItemWidget> {
   }
 
   Widget _buildImageWidget(AssetEntity entity, Uint8List uint8list, num size) {
-    return GestureDetector(
-      onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(
-              builder: (context) => ImageDetail(bytes: uint8list))),
-      child: Image.memory(
-        uint8list,
-        width: size.toDouble(),
-        height: size.toDouble(),
-        fit: BoxFit.cover,
-      ),
+
+    return FutureBuilder(
+      future: widget.entity.thumbDataWithSize(1000, 1000),
+      builder: (context,snap){
+        return Container(
+          child: GestureDetector(
+            onTap: (){
+
+              Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => ImageDetail(bytes:  snap.data??uint8list)));
+            },
+            child: Image.memory(
+              uint8list,
+              width: size.toDouble(),
+              height: size.toDouble(),
+              fit: BoxFit.cover,
+            ),
+          ),
+        );
+      },
     );
   }
 

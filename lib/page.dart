@@ -25,11 +25,10 @@ class _PageDemoState extends State<PageDemo> {
 
   AssetPathEntity get path => list[index];
 
-  List<AssetEntity> checked = [];
   int loadCount;
   bool isInit = false;
-
   AssetPathEntity picPath;
+  List<AssetEntity> checked = [];
   List<AssetEntity> picList = [];
   List<AssetEntity> headPicList;
 
@@ -55,7 +54,6 @@ class _PageDemoState extends State<PageDemo> {
   Future onRefresh() async {
     loadCount = this.list[index].assetCount;
     await path.refreshPathProperties();
-
     final list = await path.getAssetListPaged(0, loadCount);
     picList.clear();
     picList.addAll(list);
@@ -68,46 +66,7 @@ class _PageDemoState extends State<PageDemo> {
     list = [];
     headPicList = [];
     getData();
-
     super.initState();
-  }
-
-  Future<void> getData() async {
-    final option = makeOption();
-    if (option == null) {
-      assert(option != null);
-      return;
-    }
-
-    var galleryList = await PhotoManager.getAssetPathList(
-      type: type,
-      hasAll: hasAll,
-      onlyAll: onlyAll,
-      filterOption: option,
-    );
-
-    galleryList.sort((s1, s2) {
-      return s2.assetCount.compareTo(s1.assetCount);
-    });
-
-    this.list.clear();
-    this.list.addAll(galleryList);
-    setState(() {});
-    print(list);
-  }
-
-  Future<void> getMoreData() async {
-    if (!mounted) {
-      return;
-    }
-    if (showItemCount > path.assetCount) {
-      print("already max");
-      return Text("a");
-    }
-    final list = await path.getAssetListPaged(++page, loadCount);
-    picList.addAll(list);
-    print(picList);
-    print("loading more");
   }
 
   FilterOptionGroup makeOption() {
@@ -157,29 +116,56 @@ class _PageDemoState extends State<PageDemo> {
 //      ..containsEmptyAlbum = _containsEmptyAlbum;
   }
 
+  Future<void> getData() async {
+    final option = makeOption();
+    if (option == null) {
+      assert(option != null);
+      return;
+    }
+
+    var galleryList = await PhotoManager.getAssetPathList(
+      type: type,
+      hasAll: hasAll,
+      onlyAll: onlyAll,
+      filterOption: option,
+    );
+
+    galleryList.sort((s1, s2) {
+      return s2.assetCount.compareTo(s1.assetCount);
+    });
+
+    this.list.clear();
+    this.list.addAll(galleryList);
+    setState(() {});
+    getHeadPic();
+  }
+
   Widget dialogWidget() {
     final format = ThumbFormat.jpeg;
-    Column(
-      mainAxisSize: MainAxisSize.min,
-      children: List.generate(
-          list.length,
-          (item) => GestureDetector(
-                onTap: () {
-                  setState(() {
-                    Navigator.pop(context);
-                    index = item;
-                  });
-                },
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: <Widget>[
-                    buildContent(format, item),
-                    Text("${list[item].name}"),
-                    Text("${list[item].assetCount}")
-                  ],
-                ),
-              )),
-    );
+    print("listlist==>>${list.length}");
+    return headPicList.isEmpty
+        ? Container()
+        : ListView(
+            children: List.generate(
+                headPicList.length,
+                (item) => GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          Navigator.pop(context);
+                          index = item;
+                        });
+                      },
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: <Widget>[
+                          buildContent(format, item),
+                          Text("${list.isNotEmpty ? list[item].name : "name"}"),
+                          Text(
+                              "${list.isNotEmpty ? list[item].assetCount : ""}")
+                        ],
+                      ),
+                    )),
+          );
   }
 
   Widget futureBuild(
@@ -205,10 +191,7 @@ class _PageDemoState extends State<PageDemo> {
     showDialog(
         context: context,
         builder: (context) => AlertDialog(
-              content: FutureBuilder(
-                future: getHeadPic(),
-                builder: (c, s) => futureBuild(c, s, dialogWidget()),
-              ),
+              content: dialogWidget(),
             ));
   }
 
@@ -271,6 +254,7 @@ class _PageDemoState extends State<PageDemo> {
     return Stack(
       children: [
         ImageItemWidget(
+          key: ValueKey(entity),
           entity: entity,
         ),
 //        Align(

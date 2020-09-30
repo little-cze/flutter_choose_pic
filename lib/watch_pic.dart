@@ -22,7 +22,7 @@ class _ImageDetailState extends State<ImageDetail> {
         backgroundColor: Colors.black,
         actions: <Widget>[
           Padding(
-            padding: EdgeInsets.only(right: 16),
+            padding: EdgeInsets.only(right: 10),
             child: Icon(
               Icons.check_circle,
               color: Colors.green,
@@ -32,6 +32,7 @@ class _ImageDetailState extends State<ImageDetail> {
       ),
       body: PhotoView(
         imageProvider: MemoryImage(widget.bytes),
+//          imageProvider: NetworkImage("http://pic.netbian.com/uploads/allimg/200928/234503-1601307903b4ea.jpg")
       ),
     );
   }
